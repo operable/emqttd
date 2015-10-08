@@ -32,11 +32,13 @@
 %% Application callbacks
 -export([start/2, stop/1]).
 
+-define(PRINT(Format, Args), error_logger:info_msg(Format, Args)).
+
 %%%=============================================================================
 %%% Application callbacks
 %%%=============================================================================
 
--spec start(StartType, StartArgs) -> {ok, pid()} | {ok, pid(), State} | {error, Reason} when 
+-spec start(StartType, StartArgs) -> {ok, pid()} | {ok, pid(), State} | {error, Reason} when
     StartType :: normal | {takeover, node()} | {failover, node()},
     StartArgs :: term(),
     State     :: term(),
