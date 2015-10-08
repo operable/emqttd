@@ -96,7 +96,8 @@ start_listener(Protocol, Port, Options) ->
 merge_sockopts(Options) ->
     SockOpts = emqttd_opts:merge(?MQTT_SOCKOPTS,
                                  proplists:get_value(sockopts, Options, [])),
-    emqttd_opts:merge(Options, [{sockopts, SockOpts}]).
+    Updated = [fix_address(Opt) || Opt <- SockOpts],
+    emqttd_opts:merge(Options, [{sockopts, Updated}]).
 
 %%------------------------------------------------------------------------------
 %% @doc Stop Listeners
@@ -133,3 +134,14 @@ is_running(Node) ->
         Pid when is_pid(Pid) -> true
     end.
 
+%%------------------------------------------------------------------------------
+%% @doc Parse string address to tuple version
+%% @end
+%%------------------------------------------------------------------------------
+fix_address({ip, Address}) when is_list(Address) ->
+  {ok, Addr} = inet:parse_address(Address),
+  {ip, Addr};
+fix_address({ip, Address}) when is_binary(Address) ->
+  fix_address({ip, binary_to_list(Address)});
+fix_address(Opt) ->
+  Opt.
