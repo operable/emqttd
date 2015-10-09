@@ -44,7 +44,6 @@
     State     :: term(),
     Reason    :: term().
 start(_StartType, _StartArgs) ->
-    print_banner(),
     emqttd_mnesia:start(),
     {ok, Sup} = emqttd_sup:start_link(),
     start_servers(Sup),
@@ -56,13 +55,10 @@ start(_StartType, _StartArgs) ->
     print_vsn(),
     {ok, Sup}.
 
-print_banner() ->
-    ?PRINT("starting emqttd on node '~s'~n", [node()]).
-
 print_vsn() ->
     {ok, Vsn} = application:get_key(vsn),
     {ok, Desc} = application:get_key(description),
-    ?PRINT("~s ~s is running now~n", [Desc, Vsn]).
+    error_logger:info_msg("~s ~s is running now", [Vsn, Desc]).
 
 start_servers(Sup) ->
     Servers = [{"emqttd ctl", emqttd_ctl},
@@ -83,20 +79,12 @@ start_servers(Sup) ->
                {"emqttd system monitor", {supervisor, emqttd_sysmon_sup}}],
     [start_server(Sup, Server) || Server <- Servers].
 
-start_server(_Sup, {Name, F}) when is_function(F) ->
-    ?PRINT("~s is starting...", [Name]),
-    F(),
-    ?PRINT_MSG("[done]~n");
-
-start_server(Sup, {Name, Server}) ->
-    ?PRINT("~s is starting...", [Name]),
-    start_child(Sup, Server),
-    ?PRINT_MSG("[done]~n");
-
-start_server(Sup, {Name, Server, Opts}) ->
-    ?PRINT("~s is starting...", [ Name]),
-    start_child(Sup, Server, Opts),
-    ?PRINT_MSG("[done]~n").
+start_server(_Sup, {_Name, F}) when is_function(F) ->
+    F();
+start_server(Sup, {_Name, Server}) ->
+    start_child(Sup, Server);
+start_server(Sup, {_Name, Server, Opts}) ->
+    start_child(Sup, Server, Opts).
 
 start_child(Sup, {supervisor, Module}) ->
     supervisor:start_child(Sup, supervisor_spec(Module));
